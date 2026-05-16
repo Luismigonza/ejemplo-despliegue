@@ -34,6 +34,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} 
 
+      - name: Set lowercase repo name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       - name: Build and push Docker image
         run: |
           # Construir la imagen Docker usando el Dockerfile
@@ -58,10 +61,11 @@ jobs:
             echo "Conexión exitosa al VPS"
 
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.TOKEN}} 
-            docker pull ghcr.io/${{ github.repository }}:latest
+            REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            docker pull ghcr.io/$REPO:latest
             docker stop ${{github.event.repository.name}} || true
             docker rm ${{github.event.repository.name}} || true
 
             docker run -d --name ${{ github.event.repository.name }} \
                          -p 8083:8080 \
-                         ghcr.io/${{ github.repository }}:latest
+                         ghcr.io/$REPO:latest
